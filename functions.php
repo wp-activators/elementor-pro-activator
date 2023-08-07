@@ -1,20 +1,23 @@
 <?php
+/**
+ * Requires at least: 3.1.0
+ * Requires PHP:      7.1
+ */
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
 if ( ! function_exists( 'wp_get_current_user' ) ) {
 	require_once( ABSPATH . 'wp-includes/pluggable.php' );
 }
-
 if ( ! function_exists( 'is_plugin_installed' ) ) {
-	function is_plugin_installed( $plugin ) {
+	function is_plugin_installed( $plugin ): bool {
 		$installed_plugins = get_plugins();
 
 		return isset( $installed_plugins[ $plugin ] );
 	}
 }
 if ( ! function_exists( 'activator_admin_notice_ignored' ) ) {
-	function activator_admin_notice_ignored() {
+	function activator_admin_notice_ignored(): bool {
 		global $pagenow;
 		$action = $_REQUEST['action'] ?? '';
 
@@ -22,7 +25,7 @@ if ( ! function_exists( 'activator_admin_notice_ignored' ) ) {
 	}
 }
 if ( ! function_exists( 'activator_admin_notice_plugin_install' ) ) {
-	function activator_admin_notice_plugin_install( string $plugin, ?string $wp_plugin_id, string $plugin_name, string $activator_name, string $domain ) {
+	function activator_admin_notice_plugin_install( string $plugin, ?string $wp_plugin_id, string $plugin_name, string $activator_name, string $domain ): bool {
 		if ( ! is_plugin_installed( $plugin ) ) {
 			if ( ! current_user_can( 'install_plugins' ) ) {
 				return true;
@@ -46,9 +49,8 @@ if ( ! function_exists( 'activator_admin_notice_plugin_install' ) ) {
 		return false;
 	}
 }
-
 if ( ! function_exists( 'activator_admin_notice_plugin_activate' ) ) {
-	function activator_admin_notice_plugin_activate( string $plugin, string $activator_name, string $domain ) {
+	function activator_admin_notice_plugin_activate( string $plugin, string $activator_name, string $domain ): bool {
 		if ( ! is_plugin_active( $plugin ) ) {
 			if ( ! current_user_can( 'activate_plugins' ) ) {
 				return true;
@@ -78,5 +80,13 @@ if ( ! function_exists( 'activator_admin_notice_plugin_activate' ) ) {
 		}
 
 		return false;
+	}
+}
+if ( ! function_exists( 'activator_json_response' ) ) {
+	function activator_json_response( $data ) {
+		return [
+			'response' => [ 'code' => 200, 'message' => 'OK' ],
+			'body'     => json_encode( $data )
+		];
 	}
 }
