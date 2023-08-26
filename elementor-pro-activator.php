@@ -4,12 +4,11 @@
  * Plugin Name:       Elementor Pro Activator
  * Plugin URI:        https://github.com/wp-activators/elementor-pro-activator
  * Description:       Elementor Pro Plugin Activator
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 3.1
  * Author:            mohamedhk2
  * Author URI:        https://github.com/mohamedhk2
  **/
-
 defined( 'ABSPATH' ) || exit;
 
 use ElementorPro\License\Admin;
@@ -27,22 +26,30 @@ if (
 }
 require_once WP_PLUGIN_DIR . '/elementor-pro/license/admin.php';
 require_once WP_PLUGIN_DIR . '/elementor-pro/license/api.php';
-
-function initElementorProActivator() {
-	Admin::set_license_key( md5( 'free4all' ) );
-	$license_data = [
-		'success'          => true,
-		'payment_id'       => '0123456789',
-		'license_limit'    => 1000,
-		'site_count'       => 1,
-		'activations_left' => 1000,
-		'expires'          => 'lifetime',
-	];
-	API::set_transient( Admin::LICENSE_DATA_OPTION_NAME, $license_data, '+1000 year' );
-}
-
-add_action( 'plugins_loaded', function () {
+$license_data = [
+	'success'          => true,
+	'payment_id'       => '0123456789',
+	'license_limit'    => 1000,
+	'site_count'       => 1,
+	'activations_left' => 1000,
+	'expires'          => 'lifetime',
+];
+add_action( 'plugins_loaded', function () use ( $license_data ) {
 	if ( class_exists( Admin::class ) ) {
-		initElementorProActivator();
+		Admin::set_license_key( md5( 'free4all' ) );
+	}
+	if ( class_exists( API::class ) ) {
+		API::set_transient( Admin::LICENSE_DATA_OPTION_NAME, $license_data, '+1000 year' );
 	}
 } );
+add_filter( 'pre_http_request', function ( $pre, $parsed_args, $url ) use ( $license_data ) {
+	if ( class_exists( API::class ) ) {
+		switch ( $url ) {
+			case API::BASE_URL . 'license/validate':
+				return activator_json_response( $license_data );
+		}
+	}
+
+	return $pre;
+}, 99, 3 );
+
