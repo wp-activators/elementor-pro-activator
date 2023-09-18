@@ -1,7 +1,8 @@
 <?php
 /**
  * Requires at least: 3.1.0
- * Requires PHP:      7.1
+ * Requires PHP:      7.2
+ * Version:           230917
  */
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -90,3 +91,70 @@ if ( ! function_exists( 'activator_json_response' ) ) {
 		];
 	}
 }
+if ( ! function_exists( 'activator_private_property' ) ) {
+	/**
+	 * @throws ReflectionException
+	 */
+	function activator_private_property( object $object, string $property ) {
+		$reflectionProperty = new \ReflectionProperty( get_class( $object ), $property );
+		$reflectionProperty->setAccessible( true );
+
+		return $reflectionProperty->getValue( $object );
+	}
+}
+if ( ! function_exists( 'activator_inject_plugins_filter' ) ) {
+	/**
+	 * @param string $name
+	 * @param string $slug
+	 * @param callable $callback
+	 * @param int $priority
+	 *
+	 * @return void
+	 * @author mohamedhk2
+	 */
+	function activator_inject_plugins_filter( string $name, string $slug, callable $callback, int $priority = 99 ) {
+		$is_current = isset( $_REQUEST['plugin_status'] ) && $_REQUEST['plugin_status'] === $slug;
+		add_filter( 'plugins_list', function ( $plugins ) use ( $name, $slug, $is_current, $callback ) {
+			/**
+			 * @see \WP_Plugins_List_Table::prepare_items
+			 * @see \WP_Plugins_List_Table::get_sortable_columns
+			 */
+			global $status;
+			if ( $is_current ) {
+				$status = $slug;
+			}
+			$inj_plugins = array_filter( $plugins['all'], $callback );
+			if ( ! empty( $inj_plugins ) ) {
+				$plugins[ $slug ] = $inj_plugins;
+			}
+
+			return $plugins;
+		}, $priority );
+		add_filter( 'views_plugins', function ( $views ) use ( $name, $slug, $is_current ) {
+			/**
+			 * @see \WP_Plugins_List_Table::views
+			 * @see \WP_Plugins_List_Table::get_views
+			 */
+			if ( ! isset( $views[ $slug ] ) ) {
+				return $views;
+			}
+			global $totals;
+			if ( $is_current ) {
+				foreach ( $views as $key => $view ) {
+					$views[ $key ] = str_replace( ' class="current" aria-current="page"', null, $view );
+				}
+			}
+			$views[ $slug ] = sprintf(
+				'<a href="%s"%s>%s</a>',
+				esc_url( add_query_arg( 'plugin_status', $slug, 'plugins.php' ) ),
+				$is_current ? ' class="current" aria-current="page"' : null,
+				sprintf( '%s <span class="count">(%s)</span>', $name, $totals[ $slug ] )
+			);
+
+			return $views;
+		}, $priority );
+	}
+}
+activator_inject_plugins_filter( 'WP Activators', 'wp-activator', function ( $plugin ) {
+	return $plugin['Author'] === 'mohamedhk2' && str_ends_with( $plugin['Name'], ' Activator' );
+} );

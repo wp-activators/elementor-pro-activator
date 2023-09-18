@@ -4,7 +4,7 @@
  * Plugin Name:       Elementor Pro Activator
  * Plugin URI:        https://github.com/wp-activators/elementor-pro-activator
  * Description:       Elementor Pro Plugin Activator
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 3.1
  * Author:            mohamedhk2
  * Author URI:        https://github.com/mohamedhk2
