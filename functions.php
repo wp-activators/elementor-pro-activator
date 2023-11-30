@@ -2,7 +2,7 @@
 /**
  * Requires at least: 5.9.0
  * Requires PHP:      7.2
- * Version:           230917
+ * Version:           231129
  */
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -20,7 +20,7 @@ if ( ! function_exists( 'wp_get_current_user' ) ) {
  * @return void
  * @author mohamedhk2
  */
-$activator_inject_plugins_filter = function ( string $name, string $slug, callable $callback, int $priority = 99 ) {
+$plugins_filter = function ( string $name, string $slug, callable $callback, int $priority = 99 ) {
 	$is_current = isset( $_REQUEST['plugin_status'] ) && $_REQUEST['plugin_status'] === $slug;
 	add_filter( 'plugins_list', function ( $plugins ) use ( $name, $slug, $is_current, $callback ) {
 		/**
@@ -63,23 +63,23 @@ $activator_inject_plugins_filter = function ( string $name, string $slug, callab
 	}, $priority );
 };
 
-$activator_inject_plugins_filter( 'WP Activators', 'wp-activators', function ( $plugin ) {
-	return $plugin['Author'] === 'mohamedhk2' && str_ends_with( $plugin['Name'], ' Activator' );
+$plugins_filter( 'WP Activators', 'wp-activators', function ( $plugin ) {
+	return $plugin['Author'] === 'moh@medhk2' && str_ends_with( $plugin['Name'], ' Activ@tor' );
 } );
 
 return [
-	'is_plugin_installed'                    => $is_plugin_installed = function ( $plugin ): bool {
+	'is_plugin_installed'          => $is_plugin_installed = function ( $plugin ): bool {
 		$installed_plugins = get_plugins();
 
 		return isset( $installed_plugins[ $plugin ] );
 	},
-	'activator_admin_notice_ignored'         => function (): bool {
+	'admin_notice_ignored'         => function (): bool {
 		global $pagenow;
 		$action = $_REQUEST['action'] ?? '';
 
 		return $pagenow == 'update.php' && in_array( $action, [ 'install-plugin', 'upload-plugin' ], true );
 	},
-	'activator_admin_notice_plugin_install'  => function ( string $plugin, ?string $wp_plugin_id, string $plugin_name, string $activator_name, string $domain ) use ( $is_plugin_installed ): bool {
+	'admin_notice_plugin_install'  => function ( string $plugin, ?string $wp_plugin_id, string $plugin_name, string $activator_name, string $domain ) use ( $is_plugin_installed ): bool {
 		if ( ! $is_plugin_installed( $plugin ) ) {
 			if ( ! current_user_can( 'install_plugins' ) ) {
 				return true;
@@ -102,7 +102,7 @@ return [
 
 		return false;
 	},
-	'activator_admin_notice_plugin_activate' => function ( string $plugin, string $activator_name, string $domain ): bool {
+	'admin_notice_plugin_activate' => function ( string $plugin, string $activator_name, string $domain ): bool {
 		if ( ! is_plugin_active( $plugin ) ) {
 			if ( ! current_user_can( 'activate_plugins' ) ) {
 				return true;
@@ -133,20 +133,20 @@ return [
 
 		return false;
 	},
-	'activator_json_response'                => function ( $data ) {
+	'json_response'                => function ( $data ) {
 		return [
 			'response' => [ 'code' => 200, 'message' => 'OK' ],
 			'body'     => json_encode( $data )
 		];
 	},
-	'activator_private_property'             => function ( object $object, string $property ) {
+	'private_property'             => function ( object $object, string $property ) {
 		$reflectionProperty = new \ReflectionProperty( get_class( $object ), $property );
 		$reflectionProperty->setAccessible( true );
 
 		return $reflectionProperty->getValue( $object );
 	},
-	'activator_inject_plugins_filter'        => $activator_inject_plugins_filter,
-	'activator_download_file'                => function ( $url, $file_path ) {
+	'plugins_filter'               => $plugins_filter,
+	'download_file'                => function ( $url, $file_path ) {
 		$contents = file_get_contents( $url );
 		if ( $contents ) {
 			put_content:
@@ -168,7 +168,7 @@ return [
 
 		return true;
 	},
-	'activator_serialize_response'           => function ( $data ): array {
+	'serialize_response'           => function ( $data ): array {
 		return [
 			'response' => [ 'code' => 200, 'message' => 'OK' ],
 			'body'     => serialize( $data )
